@@ -1,0 +1,411 @@
+[
+  {
+    "id": "msprof",
+    "name": "msprof 模型调优工具",
+    "category": "性能分析",
+    "summary": "命令行性能数据采集和解析工具，支持采集AI任务运行性能数据、昇腾AI处理器系统数据和Host侧系统数据。",
+    "description": "msprof是CANN平台的命令行性能调优工具，提供完整的性能数据采集和解析能力。支持采集AI任务运行性能数据、昇腾AI处理器系统数据、Host侧系统数据和msproftx数据，支持动态采集和延迟采集。采集后可自动解析，也可离线解析、导出性能数据（db格式、timeline格式等）。不支持采集Python调用栈、PyTorch或MindSpore框架层数据。适用于离线推理场景和通用性能分析场景。",
+    "use_cases": [
+      "离线推理场景性能数据采集",
+      "AI任务运行性能数据采集",
+      "昇腾AI处理器系统数据采集",
+      "Host侧系统数据采集",
+      "性能数据离线解析和导出",
+      "通信性能数据解析",
+      "动态采集和延迟采集性能数据"
+    ],
+    "keywords": ["msprof", "性能", "profiling", "采集", "解析", "离线推理", "命令行", "算子", "耗时", "timeline", "通信", "系统数据", "Host", "Device", "导出", "db"],
+    "doc_url": "https://gitcode.com/Ascend/msprof/blob/master/README.md",
+    "related_tools": ["mspti", "ascend_pytorch_profiler", "mindspore_profiler", "ms_service_profiler"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A3 推理系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas 200I/500 A2 推理产品", "Atlas 推理系列产品", "Atlas 训练系列产品"],
+    "usage_example": "msprof --output=/home/user/profiling_output python3 train.py"
+  },
+  {
+    "id": "mspti",
+    "name": "MSPTI 调优工具",
+    "category": "性能分析",
+    "summary": "MindStudio Profiling Tool Interface，通用场景的Profiling API接口，支持Python和C两套API，可在各种框架的推理训练场景中使用。",
+    "description": "MSPTI（MindStudio Profiling Tool Interface）是MindStudio针对Ascend设备提出的一套Profiling API，用户可以通过MSPTI构建针对NPU应用程序的性能分析工具。MSPTI为通用场景接口，使用MSPTI API开发的Profiling分析工具可以在各种框架的推理训练场景生效。主要功能包括：Tracing（收集CANN应用程序执行时间戳和附加信息，如CANN API、Kernel、内存拷贝等）和Profiling（收集Kernel的NPU性能指标）。提供C API和Python API两套接口，Python API包括HcclMonitor（通信算子）、KernelMonitor（Kernel算子）、MstxMonitor（mstx数据）。不可与其他性能数据采集工具同时使用。",
+    "use_cases": [
+      "自定义Profiling分析工具开发",
+      "通用框架推理训练场景性能采集",
+      "通信算子（HCCL）性能数据采集",
+      "Kernel算子性能数据采集",
+      "mstx性能数据采集",
+      "CANN API耗时分析",
+      "跨框架性能分析"
+    ],
+    "keywords": ["MSPTI", "API", "Profiling", "Tracing", "Kernel", "通信", "HCCL", "HcclMonitor", "KernelMonitor", "MstxMonitor", "Activity", "Callback", "通用", "NPU", "自定义"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "ascend_pytorch_profiler", "mindspore_profiler"],
+    "supported_products": ["Atlas 200I/500 A2 推理产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "from mspti import KernelMonitor, KernelData\nmonitor = KernelMonitor()\nmonitor.start(callback)\n# 业务逻辑\nmonitor.stop()"
+  },
+  {
+    "id": "ms_service_profiler",
+    "name": "msServiceProfiler 服务化调优工具",
+    "category": "性能分析",
+    "summary": "推理服务化性能数据采集工具，用于MindIE Service/MindIE Motor推理服务化场景的性能分析。",
+    "description": "msServiceProfiler是推理服务化性能数据采集工具，主要在MindIE Motor推理服务化进程中，采集关键过程的开始和结束时间点，识别关键函数或迭代等信息，记录关键事件，支持多样的信息采集，对性能问题快速定界。提供C++和Python两套API。支持数据采集、数据解析和数据可视化（MindStudio Insight、Chrome tracing、Grafana）。扩展功能包括服务化性能数据比对工具、vLLM服务化性能采集工具、服务化自动寻优工具。同时支持Trace数据监控功能。",
+    "use_cases": [
+      "MindIE Service推理服务化性能分析",
+      "MindIE Motor服务化进程性能采集",
+      "服务化关键过程耗时定界",
+      "服务化性能数据可视化（Grafana/Chrome tracing）",
+      "vLLM服务化性能采集",
+      "服务化自动寻优",
+      "Trace数据监控"
+    ],
+    "keywords": ["msServiceProfiler", "服务化", "MindIE", "推理", "服务", "Motor", "vLLM", "Grafana", "Chrome tracing", "MindStudio Insight", "Trace", "监控", "定界", "采集", "解析"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "mspti"],
+    "supported_products": ["与MindIE支持的硬件环境一致"],
+    "usage_example": "通过json配置文件配置采集开关：\n{\"enable\": 1, \"prof_dir\": \"/path/to/output\", \"profiler_level\": \"INFO\"}"
+  },
+  {
+    "id": "mindspore_profiler",
+    "name": "MindSpore 调优工具 (MindSpore Profiler)",
+    "category": "性能分析",
+    "summary": "MindSpore框架的性能分析工具，通过在训练脚本中添加接口采集MindSpore训练场景下的全方位性能数据。",
+    "description": "MindSpore Profiler是针对MindSpore框架开发的性能分析工具，通过在MindSpore训练脚本中添加Profiler接口，执行训练的同时采集性能数据，完成训练后直接输出可视化的性能数据文件。可全面采集MindSpore训练场景下的性能数据，包括MindSpore层算子信息、CANN层算子信息、底层NPU算子信息、算子内存占用信息等。支持四种采集方式：mindspore.profiler.profile接口采集、DynamicProfilerMonitor动态采集、环境变量采集、msprof命令行采集。MindSpore 2.0及之后版本支持msprof命令行方式采集。",
+    "use_cases": [
+      "MindSpore训练场景性能数据采集",
+      "MindSpore层算子信息分析",
+      "CANN层算子信息分析",
+      "NPU算子信息分析",
+      "算子内存占用分析",
+      "动态采集（不中断训练）",
+      "训练性能瓶颈定位"
+    ],
+    "keywords": ["MindSpore", "Profiler", "训练", "算子", "内存", "采集", "DynamicProfilerMonitor", "Callback", "NPU", "CANN", "profile", "动态采集", "环境变量"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "mspti"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A3 推理系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品"],
+    "usage_example": "import mindspore\nprof = mindspore.profiler.profile(\n    schedule=mindspore.profiler.schedule(wait=0, warmup=0, active=1),\n    on_trace_ready=mindspore.profiler.tensorboard_trace_handler('./data')\n)\nprof.start()\n# 训练逻辑\nprof.stop()"
+  },
+  {
+    "id": "ascend_pytorch_profiler",
+    "name": "Ascend PyTorch 调优工具 (Ascend PyTorch Profiler)",
+    "category": "性能分析",
+    "summary": "PyTorch框架的性能分析工具，通过在训练/在线推理脚本中添加接口采集全方位性能数据。",
+    "description": "Ascend PyTorch Profiler是针对PyTorch框架开发的性能分析工具，通过在PyTorch训练/在线推理脚本中添加Profiler接口，执行训练/在线推理的同时采集性能数据，完成后直接输出可视化的性能数据文件。可全面采集PyTorch训练/在线推理场景下的性能数据，包括PyTorch层算子信息、CANN层算子信息、底层NPU算子信息、算子内存占用信息等。支持多种采集方式：torch_npu.profiler.profile接口采集、dynamic_profile动态采集、torch_npu.profiler._KinetoProfile接口采集。可选功能包括mstx数据采集、环境变量信息采集、显存可视化、子线程采集等。",
+    "use_cases": [
+      "PyTorch训练场景性能数据采集",
+      "PyTorch在线推理性能数据采集",
+      "PyTorch层算子信息分析",
+      "CANN层算子信息分析",
+      "NPU算子信息分析",
+      "算子内存占用分析",
+      "动态采集（不中断训练）",
+      "显存可视化分析",
+      "训练/推理性能瓶颈定位"
+    ],
+    "keywords": ["PyTorch", "Profiler", "torch_npu", "训练", "推理", "在线推理", "算子", "内存", "采集", "dynamic_profile", "动态采集", "显存", "NPU", "CANN", "profile", "KinetoProfile", "mstx"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "mspti"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A3 推理系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品"],
+    "usage_example": "import torch\nimport torch_npu\nwith torch_npu.profiler.profile(\n    activities=[torch_npu.profiler.ProfilerActivity.CPU, torch_npu.profiler.ProfilerActivity.NPU],\n    schedule=torch_npu.profiler.schedule(wait=0, warmup=0, active=1, repeat=1, skip_first=1),\n    on_trace_ready=torch_npu.profiler.tensorboard_trace_handler('./result')\n) as prof:\n    for step in range(steps):\n        train_one_step()\n        prof.step()"
+  },
+  {
+    "id": "tensorflow_profiling",
+    "name": "TensorFlow 框架接口采集",
+    "category": "性能分析",
+    "summary": "通过TensorFlow框架接口采集昇腾AI处理器上的训练和在线推理性能数据。",
+    "description": "使用TensorFlow框架提供的接口，在TensorFlow训练或在线推理脚本中添加Profiling相关代码，采集昇腾AI处理器上的性能数据。仅支持训练和在线推理场景。也支持通过环境变量方式采集，无需修改代码。",
+    "use_cases": [
+      "TensorFlow训练性能数据采集",
+      "TensorFlow在线推理性能数据采集",
+      "通过环境变量无侵入采集"
+    ],
+    "keywords": ["TensorFlow", "训练", "推理", "在线推理", "框架", "接口", "采集", "环境变量"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A2 训练系列产品"],
+    "usage_example": "通过在TensorFlow训练脚本中添加Profiling接口采集性能数据"
+  },
+  {
+    "id": "acl_cpp_profiling",
+    "name": "ACL C&C++ 接口采集",
+    "category": "性能分析",
+    "summary": "通过ACL C/C++接口采集离线推理场景性能数据，提供最灵活的定制化性能数据采集能力。",
+    "description": "使用ACL（AscendCL）C/C++接口在应用程序中采集离线推理场景的性能数据，是最灵活的Profiling数据采集方案，提供定制化的性能数据采集能力。支持采集并落盘性能数据、使用msproftx扩展接口采集数据、订阅算子信息等功能。仅支持离线推理场景。",
+    "use_cases": [
+      "离线推理场景定制化性能采集",
+      "C/C++应用程序性能分析",
+      "msproftx扩展数据采集",
+      "算子信息订阅"
+    ],
+    "keywords": ["ACL", "AscendCL", "C++", "C", "离线推理", "采集", "定制化", "msproftx", "算子", "订阅"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "acl_python_profiling"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas A2 推理系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "在C/C++应用程序中调用ACL Profiling相关接口采集性能数据"
+  },
+  {
+    "id": "acl_python_profiling",
+    "name": "ACL Python 接口采集",
+    "category": "性能分析",
+    "summary": "ACL API的Python封装版本，用于离线推理场景性能数据采集。",
+    "description": "ACL Python接口是ACL C/C++接口的Python封装版本，在Python应用程序中采集离线推理场景的性能数据。支持采集并落盘性能数据、使用msproftx扩展接口采集数据、订阅算子信息。仅支持离线推理场景。",
+    "use_cases": [
+      "Python离线推理场景性能采集",
+      "Python应用程序性能分析",
+      "msproftx扩展数据采集"
+    ],
+    "keywords": ["ACL", "Python", "离线推理", "采集", "msproftx"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "acl_cpp_profiling"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas A2 推理系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "在Python应用程序中调用ACL Python Profiling接口采集性能数据"
+  },
+  {
+    "id": "ascend_graph_profiling",
+    "name": "Ascend Graph 接口采集",
+    "category": "性能分析",
+    "summary": "通过Ascend Graph编程接口采集训练和在线推理场景的性能数据。",
+    "description": "使用Ascend Graph接口在昇腾Graph开发中采集性能数据。仅支持训练和在线推理场景，需要在Ascend Graph编程中调用Profiling相关接口。",
+    "use_cases": [
+      "昇腾Graph开发性能采集",
+      "Graph模式训练性能分析",
+      "Graph模式在线推理性能分析"
+    ],
+    "keywords": ["Ascend Graph", "Graph", "图开发", "训练", "在线推理", "采集"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A2 训练系列产品"],
+    "usage_example": "在Ascend Graph编程中调用Profiling相关接口采集性能数据"
+  },
+  {
+    "id": "acl_json_profiling",
+    "name": "acl.json 配置文件采集",
+    "category": "性能分析",
+    "summary": "通过acl.json配置文件方式采集离线推理场景性能数据，支持Profiling与其他组件的统一配置。",
+    "description": "使用acl.json配置文件方式采集离线推理场景的性能数据，支持Profiling与其他组件的统一配置。无需修改代码，通过配置文件控制采集行为。仅支持离线推理场景。",
+    "use_cases": [
+      "离线推理场景无代码修改性能采集",
+      "统一配置文件管理Profiling",
+      "批量配置采集参数"
+    ],
+    "keywords": ["acl.json", "配置文件", "离线推理", "采集", "无侵入", "统一配置"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "acl_cpp_profiling"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas A2 推理系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "修改acl.json配置文件中的Profiling相关字段来控制采集"
+  },
+  {
+    "id": "env_var_profiling",
+    "name": "环境变量采集",
+    "category": "性能分析",
+    "summary": "通过设置环境变量控制Profiling数据采集，配置可迁移到不同的训练或在线推理环境。",
+    "description": "通过设置特定的环境变量控制Profiling数据采集，Profiling配置可以迁移到不同的训练或在线推理的环境变量脚本中执行。仅支持训练和在线推理场景，无需修改代码。",
+    "use_cases": [
+      "无侵入性能采集",
+      "跨环境迁移Profiling配置",
+      "训练场景环境变量采集",
+      "在线推理环境变量采集"
+    ],
+    "keywords": ["环境变量", "采集", "无侵入", "迁移", "训练", "在线推理", "配置"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof"],
+    "supported_products": ["Atlas A3 训练系列产品", "Atlas A2 训练系列产品"],
+    "usage_example": "export PROFILING_MODE=true\nexport PROFILING_OPTIONS='{\"output\":\"/path/to/output\"}'"
+  },
+  {
+    "id": "mindstudio_insight",
+    "name": "MindStudio Insight",
+    "category": "可视化",
+    "summary": "性能数据可视化工具，用于将采集到的性能数据进行图形化展示和分析。",
+    "description": "MindStudio Insight是性能数据可视化工具，支持将msprof、msServiceProfiler等工具采集并解析后的性能数据进行图形化展示，帮助开发者直观分析性能瓶颈。",
+    "use_cases": [
+      "性能数据图形化展示",
+      "Timeline视图分析",
+      "算子统计可视化",
+      "性能瓶颈直观分析"
+    ],
+    "keywords": ["MindStudio Insight", "可视化", "图形化", "Timeline", "展示", "分析"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "ms_service_profiler", "ascend_pytorch_profiler", "mindspore_profiler"],
+    "supported_products": [],
+    "usage_example": "使用MindStudio Insight打开解析后的性能数据文件进行可视化分析"
+  },
+  {
+    "id": "msprof_analyze",
+    "name": "msprof-analyze 性能分析工具",
+    "category": "性能分析",
+    "summary": "性能数据辅助分析工具，用于自动化分析msprof采集的性能数据。",
+    "description": "msprof-analyze是性能分析辅助工具，可以对msprof、Ascend PyTorch Profiler等采集的性能数据进行自动化分析，帮助用户快速定位性能问题。",
+    "use_cases": [
+      "自动化性能数据分析",
+      "性能问题快速定位",
+      "辅助性能瓶颈排查"
+    ],
+    "keywords": ["msprof-analyze", "分析", "自动化", "辅助", "定位", "瓶颈"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["msprof", "ascend_pytorch_profiler"],
+    "supported_products": [],
+    "usage_example": "使用msprof-analyze分析采集到的性能数据"
+  },
+  {
+    "id": "msprechecker",
+    "name": "msprechecker 环境预检工具",
+    "category": "环境检查",
+    "summary": "环境变量和服务化配置预检工具，用于在使用msServiceProfiler前检查环境是否配置正确。",
+    "description": "msprechecker是环境预检工具，用于在使用msServiceProfiler服务化调优工具前，对环境变量和服务化配置等进行检查，确保环境配置正确。",
+    "use_cases": [
+      "msServiceProfiler使用前环境检查",
+      "环境变量配置验证",
+      "服务化配置预检"
+    ],
+    "keywords": ["msprechecker", "预检", "环境检查", "配置", "验证"],
+    "doc_url": "https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/devaids/Profiling/atlasprofiling_16_0010.html",
+    "related_tools": ["ms_service_profiler"],
+    "supported_products": ["与MindIE支持的硬件环境一致"],
+    "usage_example": "msprechecker"
+  },
+  {
+    "id": "mskpp",
+    "name": "msKPP 算子设计工具",
+    "category": "算子开发",
+    "summary": "算子设计阶段的性能建模、msOpGen工程调用和基于Ascend C模板库自动调优工具，可在秒级给出算子性能建模结果。",
+    "description": "msKPP（MindStudio Kernel Performance Prediction）是算子设计工具，具有性能建模分析、调用msOpGen算子工程和基于Ascend C模板库进行自动调优三大功能。性能建模功能可根据算子的数学逻辑，基于msKPP提供的接口写出算子表达式，在秒级给出性能建模结果。支持Tensor拆分使用、debug模式、搬运通路建模（GM→L1→FP/BT）、随路转换建模（ND↔NZ格式）、Cache命中率建模和PIPE信息理论值与msprof实测值比对。自动调优功能提供模板库Kernel下发代码生成、编译、运行的能力，同时提供Kernel内代码替换并自动调优的能力。",
+    "use_cases": [
+      "算子开发前的性能建模和方案评估",
+      "算子计算搬运规格分析",
+      "极限性能分析",
+      "算子tiling初步设计",
+      "PIPE信息理论值与msprof实测值比对",
+      "基于模板库的Kernel自动调优",
+      "搬运通路建模和随路转换建模"
+    ],
+    "keywords": ["msKPP", "算子设计", "性能建模", "Kernel Performance Prediction", "tiling", "Ascend C", "模板库", "自动调优", "搬运通路", "随路转换", "L2Cache", "Tensor", "Chip", "mmad", "matmul", "PIPE", "建模"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第3章",
+    "related_tools": ["msopgen", "msprof_op"],
+    "supported_products": ["Atlas A2 训练系列产品", "Atlas A2 推理系列产品"],
+    "usage_example": "from mskpp import mmad, Tensor, Chip\nwith Chip(\"Ascend xxxyy\") as chip:\n    chip.enable_trace()\n    chip.enable_metrics()\n    in_x = Tensor(\"GM\", \"FP16\", [32, 48], format=\"ND\")\n    in_y = Tensor(\"GM\", \"FP16\", [48, 16], format=\"ND\")\n    in_z = Tensor(\"GM\", \"FP32\", [32, 16], format=\"NC1HWC0\")\n    my_mmad(in_x, in_y, in_z)"
+  },
+  {
+    "id": "msopgen",
+    "name": "msOpGen 算子工程创建工具",
+    "category": "算子开发",
+    "summary": "基于算子原型定义生成自定义算子工程，提供模板工程生成、算子编译部署和算子仿真流水图解析能力。",
+    "description": "msOpGen（MindStudio Ops Generator）是算子工程创建工具，完成算子分析和原型定义后，可生成自定义算子工程并进行编译部署。主要功能包括：基于算子原型定义json文件输出算子工程（支持TensorFlow、Caffe、PyTorch、MindSpore、ONNX框架和aclnn单算子API调用）；创建标准算子工程和简易算子工程（-f aclnn）；算子开发（Host侧和Kernel侧实现）；算子编译部署；基于性能仿真环境生成的dump数据文件输出算子仿真流水图文件。支持Ascend C（C/C++编程语言）和DSL/TIK（Python编程语言）两种算子编码语言。",
+    "use_cases": [
+      "根据算子原型定义json文件生成算子工程",
+      "创建Ascend C自定义算子工程",
+      "创建简易算子工程（aclnn）",
+      "算子Host侧和Kernel侧实现",
+      "算子编译部署",
+      "算子仿真流水图解析",
+      "在已有算子工程中追加新算子"
+    ],
+    "keywords": ["msOpGen", "算子工程", "算子开发", "工程创建", "模板", "Ascend C", "aclnn", "编译", "部署", "json", "原型定义", "Host", "Kernel", "仿真", "流水图", "TensorFlow", "PyTorch", "MindSpore", "ONNX"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第4章",
+    "related_tools": ["mskpp", "msopst", "msprof_op"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas 训练系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "msopgen gen -i add_custom.json -f pytorch -c ai_core-Ascendxxxyy -lan cpp -out ./output"
+  },
+  {
+    "id": "msopst",
+    "name": "msOpST 算子测试工具",
+    "category": "算子开发",
+    "summary": "算子ST测试工具，在真实硬件环境中对算子输入输出进行测试以验证算子功能正确性，支持自动生成测试用例和运行报表。",
+    "description": "msOpST（MindStudio Operator System Test）是算子测试工具，使用msOpGen工具完成自定义算子包部署后，可使用msOpST进行ST测试。在真实硬件环境中对算子的输入输出进行测试，验证算子功能是否正确。主要功能包括：根据Host侧算子实现文件自动生成算子测试用例定义文件；根据测试用例定义文件生成ST测试数据及测试用例执行代码；在硬件环境上执行算子测试用例并对比期望输出与实际输出；自动生成运行报表（st_report.json）记录测试用例信息及各阶段运行情况；自动生成Ascend C算子调用核函数的上板测试框架。支持自定义精度标准和高级配置。",
+    "use_cases": [
+      "算子功能正确性验证（ST测试）",
+      "自动生成算子测试用例定义文件",
+      "在真实硬件环境执行算子测试",
+      "算子输出与期望数据精度对比",
+      "生成单算子上板测试框架",
+      "自动生成ST测试运行报表",
+      "PyTorch/MindSpore框架算子测试"
+    ],
+    "keywords": ["msOpST", "算子测试", "ST测试", "System Test", "功能验证", "精度", "测试用例", "上板", "运行报表", "st_report", "对比", "硬件", "Ascend C"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第5章",
+    "related_tools": ["msopgen", "mssanitizer", "msdebug"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas 训练系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "# 生成测试用例定义文件\nmsopst create -i op_host/add_custom.cpp -out ./output\n# 执行ST测试\nmsopst run -i AddCustom_case.json -soc Ascendxxxyy -out ./output"
+  },
+  {
+    "id": "mssanitizer",
+    "name": "msSanitizer 异常检测工具",
+    "category": "算子开发",
+    "summary": "基于AI处理器的算子异常检测工具，提供内存检测、竞争检测、未初始化检测和同步检测四个子功能，支持多核程序下内存问题精准定位。",
+    "description": "msSanitizer（MindStudio Sanitizer）是基于AI处理器的异常检测工具，包含四个子功能：内存检测（memcheck）可协助定位非法读写、多核踩踏、非对齐访问、内存泄漏及非法释放等内存问题，同时支持CANN软件栈内存检测；竞争检测（racecheck）可定位核内竞争（流水间和流水内）和核间竞争问题；未初始化检测（initcheck）可定位内存未初始化导致的脏数据读取问题；同步检测（synccheck）可定位前序算子中未配对同步指令导致的后续算子同步失败问题。支持Kernel直调、单算子API调用、PyTorch框架和Triton算子调用四种场景。可通过添加--cce-enable-sanitizer编译选项开启全量检测。",
+    "use_cases": [
+      "算子内存非法读写检测",
+      "多核踩踏和内存泄漏检测",
+      "核内和核间竞争检测",
+      "未初始化内存读取检测",
+      "同步指令配对检测",
+      "CANN软件栈内存检测",
+      "PyTorch和Triton算子异常检测"
+    ],
+    "keywords": ["msSanitizer", "异常检测", "内存检测", "memcheck", "竞争检测", "racecheck", "未初始化", "initcheck", "同步检测", "synccheck", "内存泄漏", "非法读写", "多核踩踏", "非对齐访问", "Kernel直调", "Ascend C", "cce-enable-sanitizer"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第6章",
+    "related_tools": ["msopst", "msdebug", "msopgen"],
+    "supported_products": ["Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "# 内存检测\nmssanitizer -t memcheck -- ./application\n# 竞争检测\nmssanitizer -t racecheck -- ./application\n# 同时开启内存和竞争检测\nmssanitizer -t memcheck -t racecheck ./application\n# 开启内存泄漏检测\nmssanitizer --leak-check=yes ./application"
+  },
+  {
+    "id": "msdebug",
+    "name": "msDebug 算子调试工具",
+    "category": "算子开发",
+    "summary": "面向昇腾设备的算子调试工具，支持断点设置、内存与变量打印、单步调试、核切换、寄存器读取和Core dump文件解析等功能。",
+    "description": "msDebug（MindStudio Debugger）是面向昇腾设备的算子调试工具，用于调试NPU侧运行的算子程序。调试手段包括：断点设置（行断点）；内存与变量打印（GlobalTensor、LocalTensor、打印GM/UB/L0A/L0B/L0C/L1内存）；单步调试（step-over、step-in、step-out）；中断运行（CTRL+C）；核切换（切换Cube核/Vector核）；读取寄存器；调试信息展示（Device信息、Core信息、Task信息、Stream信息、Block信息）；解析异常算子Core dump文件。基于lldb实现，支持Kernel直调、单算子API调用和PyTorch框架三种算子调用场景。需要安装NPU驱动时指定--full或--debug参数。",
+    "use_cases": [
+      "Ascend C算子断点调试",
+      "NPU侧算子变量和内存打印",
+      "算子单步调试（上板调试）",
+      "Cube核和Vector核切换调试",
+      "算子异常Core dump文件解析",
+      "PyTorch框架调用的算子调试",
+      "通算融合算子指定Device调试"
+    ],
+    "keywords": ["msDebug", "算子调试", "调试", "debug", "断点", "breakpoint", "单步", "step", "内存打印", "变量", "寄存器", "Core dump", "核切换", "lldb", "GlobalTensor", "LocalTensor", "UB", "GM", "Kernel直调", "NPU"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第7章",
+    "related_tools": ["mssanitizer", "msopst", "msopgen"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品"],
+    "usage_example": "# 加载可执行文件并启动调试\nmsdebug ./application\n# 设置断点\n(msdebug) b add_custom.cpp:85\n# 运行\n(msdebug) r\n# 打印变量\n(msdebug) p zLocal\n# 读取GM内存\n(msdebug) x -m GM -f float16[] 0x00001240c0037000 -c 2 -s 128\n# 查看核信息\n(msdebug) ascend info cores"
+  },
+  {
+    "id": "msprof_op",
+    "name": "msProf 算子调优工具",
+    "category": "算子开发",
+    "summary": "采集和分析运行在AI处理器上算子的关键性能指标，输出计算内存热力图、Roofline瓶颈分析图、指令流水图等可视化数据。",
+    "description": "msProf（算子调优工具）用于采集和分析运行在AI处理器上算子的关键性能指标，帮助用户快速定位算子的软硬件性能瓶颈。支持上板和仿真两种运行模式，可采集可执行文件或算子二进制.o文件的性能数据。输出多种可视化数据通过MindStudio Insight展示：计算内存热力图、Roofline瓶颈分析图、Cache热力图、通算流水图（通算融合算子）、指令流水图、算子代码热点图、内存通路吞吐率波形图。支持丰富的性能指标采集（ArithmeticUtilization、L2Cache、Memory、MemoryL0、MemoryUB、PipeUtilization、ResourceConflictRatio、Roofline、TimelineDetail、Occupancy、MemoryDetail、Source等）。可通过mstx接口配合实现范围级重放。",
+    "use_cases": [
+      "算子性能数据采集（上板/仿真）",
+      "计算内存热力图分析",
+      "Roofline瓶颈分析",
+      "Cache热力图分析",
+      "指令流水图分析",
+      "算子代码热点图分析",
+      "内存通路吞吐率波形分析",
+      "核间负载均衡分析（Occupancy）",
+      "算子Kernel侧指定代码段性能采集"
+    ],
+    "keywords": ["msProf", "算子调优", "msprof op", "性能采集", "热力图", "Roofline", "Cache", "指令流水图", "代码热点", "内存通路", "PipeUtilization", "ArithmeticUtilization", "L2Cache", "Memory", "MemoryL0", "MemoryUB", "ResourceConflictRatio", "TimelineDetail", "Occupancy", "mstx", "MindStudio Insight", "上板", "仿真"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第8章",
+    "related_tools": ["mskpp", "msopgen", "mindstudio_insight", "msprof"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas A2 训练系列产品", "Atlas A2 推理系列产品", "Atlas A3 训练系列产品", "Atlas A3 推理系列产品"],
+    "usage_example": "# 采集算子性能数据\nmsprof op --output=$HOME/output ./application\n# 采集指定算子\nmsprof op --kernel-name=AddCustom --launch-count=5 ./application\n# 使能Roofline分析\nmsprof op --aic-metrics=Roofline ./application\n# 使能指令流水图\nmsprof op --aic-metrics=TimelineDetail ./application"
+  },
+  {
+    "id": "op_ut_run",
+    "name": "op_ut_run 算子UT测试工具",
+    "category": "算子开发",
+    "summary": "算子单元测试(UT)工具，用于测试算子代码正确性，验证输入输出结果与设计的一致性，覆盖算子代码所有分支。",
+    "description": "op_ut_run是算子开发效率提升工具，主要用于算子的单元测试（Unit Test）。UT测试是开发人员进行算子代码验证的手段之一，目的是测试算子代码的正确性、验证输入输出结果与设计的一致性。UT侧重于保证算子程序能够正常运行，选取的场景组合应能覆盖算子代码的所有分支（一般要求覆盖率达到100%），从而降低不同场景下算子代码的编译失败率。与msOpST的ST测试（在真实硬件上运行）不同，UT测试通常在开发环境中运行，更快速轻量。",
+    "use_cases": [
+      "算子代码单元测试（UT）",
+      "算子输入输出一致性验证",
+      "算子代码分支覆盖测试",
+      "快速算子功能验证"
+    ],
+    "keywords": ["op_ut_run", "UT", "单元测试", "Unit Test", "算子测试", "代码验证", "覆盖率", "分支覆盖"],
+    "doc_url": "CANN社区版 9.0.0-beta1 算子开发工具用户指南 第9章附录",
+    "related_tools": ["msopst", "msopgen"],
+    "supported_products": ["Atlas 推理系列产品", "Atlas 训练系列产品"],
+    "usage_example": "op_ut_run"
+  }
+]
