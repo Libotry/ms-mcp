@@ -179,6 +179,55 @@ def build_skill_index_if_needed():
     return indexed
 
 
+# ── 路径安全校验 ─────────────────────────────────────────────────
+
+def _validate_file_path(file_path: str, allowed_base: Path | None = None) -> Path | str:
+    """校验文件路径，防止路径遍历攻击。
+
+    Args:
+        file_path: 用户传入的文件路径
+        allowed_base: 允许的根目录（若为 None 则不限制）
+
+    Returns:
+        校验通过的 Path 对象
+
+    Raises:
+        ValueError: 路径无效或超出允许范围
+    """
+    try:
+        resolved = Path(file_path).resolve()
+        if allowed_base is not None:
+            allowed = allowed_base.resolve()
+            if not resolved.is_relative_to(allowed):
+                raise ValueError(f"禁止访问允许目录之外的文件: {file_path}")
+        return resolved
+    except (OSError, ValueError) as e:
+        raise ValueError(f"路径无效: {file_path}") from e
+
+
+def _validate_dir_path(dir_path: str) -> Path | str:
+    """校验目录路径，防止路径遍历攻击。
+
+    Args:
+        dir_path: 用户传入的目录路径
+
+    Returns:
+        校验通过的 Path 对象
+
+    Raises:
+        ValueError: 路径无效或不是目录
+    """
+    try:
+        resolved = Path(dir_path).resolve()
+        if not resolved.exists():
+            raise ValueError(f"目录不存在: {dir_path}")
+        if not resolved.is_dir():
+            raise ValueError(f"路径不是目录: {dir_path}")
+        return resolved
+    except (OSError, ValueError) as e:
+        raise ValueError(f"路径无效: {dir_path}") from e
+
+
 # ── MCP Tools: 知识库查询 ─────────────────────────────────────────
 
 
@@ -516,9 +565,11 @@ def analyze_profiling(file_path: str, top_n: int = 10) -> str:
     """
     from analyzer import analyze_profiling_data
     try:
-        result = analyze_profiling_data(file_path, top_n)
+        # 路径安全校验，防止目录遍历攻击
+        validated_path = _validate_file_path(file_path)
+        result = analyze_profiling_data(str(validated_path), top_n)
         return json.dumps(result, ensure_ascii=False, indent=2)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"error": f"分析失败: {type(e).__name__}: {e}"}, ensure_ascii=False)
@@ -537,9 +588,11 @@ def analyze_profiling_directory(dir_path: str, top_n: int = 10) -> str:
     """
     from analyzer import analyze_profiling_data, detect_file_type
 
-    dir_p = Path(dir_path)
-    if not dir_p.exists():
-        return json.dumps({"error": f"目录不存在: {dir_path}"}, ensure_ascii=False)
+    # 路径安全校验，防止目录遍历攻击
+    try:
+        dir_p = _validate_dir_path(dir_path)
+    except ValueError as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
     results = {}
     all_findings = []
@@ -548,6 +601,12 @@ def analyze_profiling_directory(dir_path: str, top_n: int = 10) -> str:
         if not f.is_file():
             continue
         if f.suffix.lower() not in (".csv", ".db", ".json"):
+            continue
+        # 校验文件在允许目录内
+        try:
+            _validate_file_path(str(f), allowed_base=dir_p)
+        except ValueError:
+            # 跳过不在允许目录内的文件（符号链接等情况）
             continue
         ftype = detect_file_type(str(f))
         if ftype == "unknown":
@@ -558,8 +617,13 @@ def analyze_profiling_directory(dir_path: str, top_n: int = 10) -> str:
             if analysis.get("findings"):
                 for finding in analysis["findings"]:
                     all_findings.append({"source_file": f.name, **finding})
+        except PermissionError as e:
+            results[f.name] = {"error": f"权限不足: {e}"}
+        except (ValueError, IOError) as e:
+            results[f.name] = {"error": f"文件格式错误: {e}"}
         except Exception as e:
-            results[f.name] = {"error": str(e)}
+            results[f.name] = {"error": f"分析失败: {type(e).__name__}: {e}"}
+
 
     if not results:
         return json.dumps({

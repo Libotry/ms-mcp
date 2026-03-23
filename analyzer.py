@@ -7,6 +7,126 @@
 import csv
 import sqlite3
 from pathlib import Path
+from typing import TypedDict
+
+
+# ── 返回类型定义 ────────────────────────────────────────────
+
+class FindingItem(TypedDict, total=False):
+    """事实标记（finding）结构（所有字段可选）。"""
+    type: str
+    op_name: str
+    ratio_pct: float
+    ai_cpu_time_us: float
+    duration_us: float
+    op_type: str
+    count: int
+    avg_time_us: float
+    max_time_us: float
+    max_avg_ratio: float
+    free_ratio_pct: float
+    overlap_ratio_pct: float
+    bubble_ratio_pct: float
+    data_aug_ratio_pct: float
+    wait_ratio: float
+    idle_ms: float
+    idle_ratio: float
+    transport_type: str
+    avg_bandwidth_GBps: float
+    min_bandwidth_GBps: float
+
+
+class OpInfo(TypedDict, total=False):
+    """算子信息。"""
+    name: str
+    type: str
+    task_type: str
+    duration_us: float
+    ratio: float
+    memory_bound: str
+    cube_utilization: str
+
+
+class TypeDistItem(TypedDict):
+    """Task Type 分布项。"""
+    time_us: float
+    ratio: float
+
+
+class OpSummaryResult(TypedDict, total=False):
+    """analyze_op_summary 返回结构。"""
+    total_ops: int
+    total_time_us: float
+    top_ops: list[OpInfo]
+    type_distribution: dict[str, TypeDistItem]
+    findings: list[FindingItem]
+    error: str
+
+
+class OpStatisticResult(TypedDict, total=False):
+    """analyze_op_statistic 返回结构。"""
+    total_time_us: float
+    total_count: int
+    op_stats: list[dict]
+    findings: list[FindingItem]
+    error: str
+
+
+class StepTraceResult(TypedDict, total=False):
+    """analyze_step_trace 返回结构。"""
+    total_iterations: int
+    total_time_us: float
+    iteration_stats: dict
+    findings: list[FindingItem]
+    error: str
+
+
+class MemoryResult(TypedDict, total=False):
+    """analyze_memory 返回结构。"""
+    total_memory_kb: float
+    top_ops: list[dict]
+    findings: list[FindingItem]
+    error: str
+
+
+class CommunicationResult(TypedDict, total=False):
+    """analyze_communication 返回结构。"""
+    total_comm_time_us: float
+    comm_by_type: dict
+    findings: list[FindingItem]
+    error: str
+
+
+class DBResult(TypedDict, total=False):
+    """analyze_db 返回结构。"""
+    tables: list[str]
+    summary: dict
+    findings: list[FindingItem]
+    error: str
+
+
+class TraceViewResult(TypedDict, total=False):
+    """analyze_trace_view 返回结构。"""
+    total_ops: int
+    total_duration_us: float
+    top_ops: list[dict]
+    findings: list[FindingItem]
+    error: str
+
+
+class CommJsonResult(TypedDict, total=False):
+    """analyze_communication_json 返回结构。"""
+    comm_list: list[dict]
+    findings: list[FindingItem]
+    error: str
+
+
+class CommMatrixResult(TypedDict, total=False):
+    """analyze_communication_matrix_json 返回结构。"""
+    matrix_size: int
+    bandwidth_stats: dict
+    findings: list[FindingItem]
+    error: str
 
 
 # ── CSV 解析 ──────────────────────────────────────────────
@@ -38,7 +158,7 @@ def _safe_float(value: str, default: float = 0.0) -> float:
         return default
 
 
-def analyze_op_summary(file_path: str, top_n: int = 10) -> dict:
+def analyze_op_summary(file_path: str, top_n: int = 10) -> OpSummaryResult:
     """分析 op_summary CSV，找出高耗时算子和潜在瓶颈。"""
     rows = _read_csv(file_path)
     if not rows:
@@ -121,7 +241,7 @@ def analyze_op_summary(file_path: str, top_n: int = 10) -> dict:
     }
 
 
-def analyze_op_statistic(file_path: str) -> dict:
+def analyze_op_statistic(file_path: str) -> OpStatisticResult:
     """分析 op_statistic CSV，统计各类算子的调用次数和耗时。"""
     rows = _read_csv(file_path)
     if not rows:
@@ -171,7 +291,7 @@ def analyze_op_statistic(file_path: str) -> dict:
     }
 
 
-def analyze_step_trace(file_path: str) -> dict:
+def analyze_step_trace(file_path: str) -> StepTraceResult:
     """分析 step_trace CSV，检查迭代耗时分布和通信计算重叠。"""
     rows = _read_csv(file_path)
     if not rows:
@@ -276,7 +396,7 @@ def analyze_step_trace(file_path: str) -> dict:
         }
 
 
-def analyze_memory(file_path: str, top_n: int = 10) -> dict:
+def analyze_memory(file_path: str, top_n: int = 10) -> MemoryResult:
     """分析 operator_memory CSV，找出高内存占用算子。"""
     rows = _read_csv(file_path)
     if not rows:
@@ -328,7 +448,7 @@ def analyze_memory(file_path: str, top_n: int = 10) -> dict:
     }
 
 
-def analyze_communication(file_path: str) -> dict:
+def analyze_communication(file_path: str) -> CommunicationResult:
     """分析 communication_statistic CSV。"""
     rows = _read_csv(file_path)
     if not rows:
@@ -371,7 +491,7 @@ def analyze_communication(file_path: str) -> dict:
 # ── DB 解析 ───────────────────────────────────────────────
 
 
-def analyze_db(db_path: str, top_n: int = 10) -> dict:
+def analyze_db(db_path: str, top_n: int = 10) -> DBResult:
     """分析 msprof 导出的 db 文件，提取关键性能指标。"""
     path = Path(db_path)
     if not path.exists():
@@ -568,7 +688,7 @@ def _process_trace_segment(seg, pat_ph, pat_dur, pat_name, pat_cat, op_agg):
         op_agg[key][2] = dur
 
 
-def analyze_trace_view(file_path: str, top_n: int = 10) -> dict:
+def analyze_trace_view(file_path: str, top_n: int = 10) -> TraceViewResult:
     """分析 trace_view.json（Chrome Tracing 格式），按算子名聚合统计耗时。
 
     由于文件可能非常大（数百 MB），采用分块正则提取，避免逐字符遍历。
@@ -683,7 +803,7 @@ def analyze_trace_view(file_path: str, top_n: int = 10) -> dict:
     }
 
 
-def analyze_communication_json(file_path: str) -> dict:
+def analyze_communication_json(file_path: str) -> CommJsonResult:
     """分析 communication.json，提取通信算子的耗时和带宽信息。"""
     data = _read_json(file_path)
     if not isinstance(data, dict) or not data:
@@ -798,7 +918,7 @@ def analyze_communication_json(file_path: str) -> dict:
     }
 
 
-def analyze_communication_matrix_json(file_path: str) -> dict:
+def analyze_communication_matrix_json(file_path: str) -> CommMatrixResult:
     """分析 communication_matrix.json，提取设备间通信矩阵和带宽。"""
     data = _read_json(file_path)
     if not isinstance(data, dict) or not data:
