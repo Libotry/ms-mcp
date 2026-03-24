@@ -463,24 +463,75 @@ msmemscope.take_snapshot(device_mask=0, name="after_forward")
 ## 十二、常见问题
 
 **Q: msprof 和 msMemScope 有什么区别？**
-- msprof：性能 Profiling（算子耗时、通信、计算重叠）
-- msMemScope：内存调试（泄漏、踩踏、低效内存）
+A:
+| 工具 | 能力 | 适用场景 |
+|------|------|---------|
+| msprof | 性能 Profiling（算子耗时/通信/重叠） | 性能瓶颈定位 |
+| msMemScope | 内存调试（泄漏/踩踏/低效） | 内存相关问题 |
 
-两者互补，共同构成昇腾性能调优工具链。
+两者互补，共同构成昇腾调优工具链。
 
 **Q: Python 接口采集不到数据？**
-- 检查 LD_PRELOAD 和 LD_LIBRARY_PATH 是否正确设置
-- 检查 CANN 环境变量是否已 source
+A: 排查顺序：
+1. `LD_PRELOAD` 是否设置：`echo $LD_PRELOAD`
+2. `LD_LIBRARY_PATH` 包含 CANN 库路径
+3. `source` CANN 环境变量（`ascend-env.sh`）
+4. Python 脚本是否在设置环境变量后启动（需重启 shell 或重新运行）
+5. 权限问题：用 `ldd` 检查动态库是否都能找到
 
-**Q: 输出是 CSV 好还是 DB 好？**
-- CSV：直接查看，便于脚本处理
-- DB：可用 MindStudio Insight 可视化分析
+**Q: 输出选 CSV 还是 DB？**
+A: 按场景选择：
+| 格式 | 适用场景 |
+|------|---------|
+| CSV | 直接查看、脚本处理、离线分析 |
+| DB | MindStudio Insight 可视化、多维分析、图形界面 |
+| SNAPSHOT | 瞬间内存快照，需要分析某一时刻内存状态 |
 
 **Q: 内存泄漏分析需要设置什么 events？**
-- 必须设置 `--events` 包含 `alloc` 和 `free`
+A: 必须包含 `alloc` 和 `free`：
+```bash
+msmemscope --analysis=leaks --events=alloc,free
+```
+缺少任一都会导致分析不准确。
 
 **Q: 不确定用哪个功能怎么办？**
-- 优先用 `msmemscope --analysis=leaks,decompose,inefficient` 一次性开启所有分析
+A: 一次性全开最保险：
+```bash
+msmemscope --analysis=leaks,decompose,inefficient
+```
+结果会同时包含泄漏定位 + 内存拆解 + 低效识别，再按需深入。
+
+**Q: 内存踩踏（memory corruption）如何定位？**
+A:
+1. 用 `leaks` 模式采集，查看 "Invalid Free" / "Double Free" 记录
+2. 用 `snapshot` 定点采集，对比正确运行 vs 问题运行的内存布局
+3. 检查是否有越界访问（尤其是 GPU → NPU 数据搬运时）
+4. 开启 ASAN（Address Sanitizer）辅助定位越界写入
+
+**Q: 输出 CSV 打开乱码？**
+A: 可能是中文编码问题。用 `iconv` 转换：
+```bash
+iconv -f GBK -t UTF-8 input.csv > output.csv
+```
+或直接用 Python 的 `pandas.read_csv(encoding='gbk')` 读取。
+
+**Q: 低效内存识别不生效？**
+A: 检查：
+1. `events` 是否包含 `alloc`
+2. 分析的 `pid` 是否正确
+3. 采集时长是否足够（过短会导致数据不足）
+
+**Q: 如何分析某一次请求的内存轨迹？**
+A:
+1. 确定请求的 PID 和时间窗口
+2. 用 `snapshot` 模式在请求开始/结束时分两次采集
+3. 对比两次快照的内存增长，找出申请但未释放的部分
+
+**Q: 大规模集群（多卡 / 多节点）如何统一分析？**
+A:
+1. 各节点分别采集，输出到本地 CSV/DB
+2. 用 `msmemscope --merge` 合并多节点数据（DB 格式）
+3. 在 MindStudio Insight 中导入合并后的 DB 进行全局分析
 
 ---
 

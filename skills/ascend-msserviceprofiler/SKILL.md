@@ -378,19 +378,68 @@ msservice_advisor optimize --input-path=<prof_dir> --output-path=<output>
 ## 十、常见问题
 
 **Q: 采集数据为空？**
-检查 `enable` 是否设为 1，且 `SERVICE_PROF_CONFIG_PATH` 环境变量在服务启动前设置。
+A: 排查步骤：
+1. 确认 `enable` 设为 1（不是 0）
+2. 确认 `SERVICE_PROF_CONFIG_PATH` 在服务**启动前**设置（不是启动后）
+3. 确认配置文件语法正确（JSON 格式，符号匹配）
+4. 重启服务使环境变量生效
+5. 如果用 Kubernetes/容器部署，需将配置挂载进容器
 
-**Q: 解析报错 "db is lock"？**
-等待采集完全结束（进程停止）后再解析。
+**Q: 解析时报错 "db is lock"？**
+A: 原因：采集进程还未完全停止就开始解析。等待进程停止后再解析。
 
-**Q: Chrome Tracing 超过 500MB？**
-使用 MindStudio Insight 可视化。
+**Q: Chrome Tracing 文件超过 500MB，打开很卡？**
+A: 方案：
+1. 使用 MindStudio Insight 可视化（大文件无压力）
+2. 减少采集时长（10~30 秒足够定位问题）
+3. 过滤不必要的 domain，只保留关注的服务调用链
+4. 用 `trace-filter` 工具裁剪文件
 
-**Q: acl_task_time 建议配置？**
-一般场景用默认值 L0（`acl_task_time=1`），模型执行耗时异常时开启 L1（`acl_task_time=2`），建议采集 3~5 秒。
+**Q: acl_task_time 不知道配多少？**
+A: 按场景选择：
+| acl_task_time | 级别 | 适用场景 |
+|--------------|------|---------|
+| 1 | L0 | 一般场景，默认值 |
+| 2 | L1 | 模型执行耗时异常，需更细粒度 |
+| 采集建议 | 3~5 秒 | 避免过长（文件过大） |
 
 **Q: 多机多卡如何统一采集？**
-使用 Samba 等共享配置文件方案，每个节点分别启动服务。
+A: 推荐方案：
+1. 使用共享存储（Samba / NFS）存放统一配置文件
+2. 各节点分别设置 `SERVICE_PROF_CONFIG_PATH` 指向同一配置文件
+3. 分别在各节点启动服务，`output_dir` 指向本节点路径
+4. 采集结束后，用统一工具合并分析
+
+**Q: MindIE Motor 和 vLLM-ascend 选哪个？**
+A: 对比：
+| 框架 | 适用场景 | 特点 |
+|------|---------|------|
+| MindIE Motor | 企业级推理服务 | 完整生态，高可用 |
+| vLLM-ascend | 追求高吞吐 | PagedAttention，延迟优化 |
+
+**Q: Trace 数据推送到 Jaeger 失败？**
+A: 排查：
+1. Jaeger 是否正常运行（`curl` 验证 OTLP 端口）
+2. OTLP 端点地址是否正确（检查 `otlp_config.endpoint`）
+3. 网络是否通（容器内能否访问 Jaeger）
+4. 防火墙是否拦截（开放 4317 / 4318 端口）
+
+**Q: 如何确定哪些 domain 需要采集？**
+A: 先用全量采集（不设 domain 白名单）跑一次，确认各 domain 数据量后：
+- 如果某个 domain 数据极少或无数据 → 关闭它
+- 如果只关心特定服务 → 只开对应 domain
+- 推荐优先开启：`Request`（必选）、`ModelExecute`、`KVCache`
+
+**Q: 推理服务启动慢/卡住，怀疑是 msServiceProfiler 问题？**
+A: 快速验证：关闭 msServiceProfiler（`enable=0`），对比服务启动时间。
+- 启动时间恢复正常 → msServiceProfiler 引入的 overhead
+- 仍然很慢 → 服务本身问题，与 Profiler 无关
+
+**Q: 解析后没有看到自定义的 Span/Event？**
+A: 检查：
+1. 代码中是否正确调用了 `Tracer.start_span()` / `span.add_event()`
+2. Span 名称是否和配置中 `domains.symbols` 匹配
+3. 是否在 `enable=true` 的前提下启动的服务
 
 ---
 

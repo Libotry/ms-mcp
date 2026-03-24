@@ -461,20 +461,83 @@ print(prof.key_averages().table(sort_by="npu_time_total", row_limit=20))
 
 ## 六、常见问题快速问答
 
-**Q: 不知道用什么工具怎么办？**
-A: 优先尝试 `msprof` 命令，最通用，覆盖场景最广。
+**Q: 不知道用什么工具/接口怎么办？**
+A: 按以下场景选择：
+- 通用调试 / 离线推理 → `msprof` 命令（最通用）
+- 无代码修改 → `acl.json` 配置文件
+- 定制化离线推理 → C/C++ `acl` 接口
+- Python 训练 / 在线推理 → PyTorch Profiler 接口
+- 昇腾图开发 → Ascend Graph 接口
+- MindIE 推理服务 → msServiceProfiler
 
 **Q: msprof 命令找不到怎么办？**
-A: 确保已安装 CANN Toolkit 开发套件包，或检查 PATH 环境变量。
+A: 逐项检查：
+1. CANN Toolkit 开发套件包是否已安装：`which msprof`
+2. 未安装 → 参考《CANN 安装指南》安装 Toolkit 包
+3. 已安装但找不到 → `source $ASCEND_HOME/bin/ascend-env.sh` 或将 `$ASCEND_HOME/bin` 加入 PATH
 
-**Q: 采集影响性能怎么办？**
-A: Profiling 本身有 overhead，可通过减少采集时长或降低采集频率来控制。
+**Q: 采集影响性能（overhead 过大）怎么办？**
+A: 逐项优化：
+1. **减少采集时长**：先采集 10~30 秒定位问题，不开全量数据
+2. **降低采集频率**：`--interval` 参数调大
+3. **减少数据项**：先只开 AI Core，确定瓶颈大类后再细分
+4. **生产环境**：用 `--fp` 定点采集代替全程采集
 
 **Q: PyTorch 接口采集不到数据？**
-A: 确保已安装 `torch_npu` 包，且 NPU 驱动正常。
+A: 排查顺序：
+1. `torch_npu` 包是否安装：`pip show torch_npu`
+2. NPU 驱动是否正常：`npu-smi` 或 `ascend-smi` 查看设备
+3. `LD_PRELOAD` 是否加载：`echo $LD_PRELOAD`
+4. 脚本中是否正确初始化：`import torch_npu; torch.npu.set_device(0)`
+
+**Q: 采集到的数据为 0 或很少？**
+A: 可能原因：
+1. 任务运行时间太短（小于采集起效延迟）
+2. AI Core 没被调用（模型在 CPU 执行）
+3. 环境变量未在进程启动前设置
+4. 采集级别不够（改 `--aclnn_level` 提高）
 
 **Q: 如何确定采集哪些数据项？**
-A: 通用调试：AI Core + AI Vector Core + Memory；深度分析：加上 Host 侧数据。
+A: 按分析目标选择：
+| 分析目标 | 推荐数据项 |
+|---------|-----------|
+| 通用调试 | AI Core + AI Vector Core + Memory |
+| 深度分析 | + Host 侧数据 + TLS |
+| 通信瓶颈 | + HCCL/COMM |
+| 内存瓶颈 | + AI CPU + Memory |
+| 算子融合效果 | + AI Core Profiler（逐算子）|
+
+**Q: msprof 和 msServiceProfiler 有什么区别？**
+A:
+| 对比 | msprof | msServiceProfiler |
+|------|--------|------------------|
+| 目标 | 离线 / 训练 / 推理全场景 | MindIE / vLLM 推理服务 |
+| 视角 | 单节点 / 单卡 | 分布式微服务 |
+| 数据 | 算子级耗时 + 硬件指标 | 请求级延迟 + Trace |
+
+**Q: TensorFlow 训练如何采集？**
+A: 两种方式：
+1. **环境变量方式**（推荐，配置文件迁移）：设置 `PROFILING_*` 环境变量
+2. **Hook 方式**：在 Python 代码中用 `tf.profiler.experimental.start()` / `stop()`
+
+**Q: 如何分析通信瓶颈？**
+A: 步骤：
+1. 采集时加入 `--events` 或配置 `hdc_comm` 数据项
+2. 查看 `comm_high_wait_ratio` / `comm_bandwidth_imbalance` Finding
+3. 用 `hdc_nccl_kernel_stats` 查看 NCCL Kernel 调用
+4. 多机场景：检查各节点间带宽是否均衡
+
+**Q: 采集数据太大（超过 500MB）怎么办？**
+A:
+1. 减少采集时长（采样代替全量）
+2. 只开必要的数据项
+3. 使用 `--output` 指定输出路径
+4. 解析时加 `--filter` 过滤不关心的算子
+
+**Q: 如何验证 Profiling 本身没有改变模型行为？**
+A: 对比同一次运行中开启和关闭 Profiling 的 Loss：
+- 若 Loss 差异显著（>1%），Profiling 引入的同步影响了结果 → 减少采集频率或缩短采集时长
+- 若差异微小，说明 Profiling overhead 可忽略
 
 ---
 
