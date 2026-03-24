@@ -144,7 +144,7 @@ models = [
     dict(
         type=VLLMCustomAPI,
         abbr="vllm-api-general-chat",
-        model="Qwen/Qwen2.5-7B-Instruct",   # 实际模型名称
+        model="Qwen/Qwen2.5-7B-Instruct",
         host="localhost",
         port=8080,
         url="/v1/chat/completions",
@@ -182,7 +182,6 @@ models = [
 ### Mooncake Trace 特殊用法
 
 ```bash
-# 使用真实业务流量回放
 ais_bench --models vllm_api --datasets mooncake_trace \
   --trace_path /path/to/your/trace.json
 ```
@@ -195,12 +194,12 @@ ais_bench --models vllm_api --datasets mooncake_trace \
 
 | 指标 | 说明 |
 |------|------|
-| first_token_latency | 首 Token 延迟（秒） |
-| per_token_latency | Token 间隔延迟（秒） |
+| TTFT | Time To First Token，首 token 延迟 |
+| ITL | Inter-token Latency，token 间隔延迟 |
+| TPOT | Time Per Output Token，平均每 token 延迟 |
+| E2EL | End-to-End Latency，端到端延迟 |
 | request_throughput | 请求吞吐（请求/秒） |
 | token_throughput | Token 吞吐（Token/秒） |
-| RPS | 每秒请求数 |
-| stable_stage | 稳态性能（预热后压测）|
 
 ### 性能配置参数
 
@@ -222,9 +221,9 @@ outputs/default/YYYYMMDD_HHMMSS/
 ├── predictions/        # 推理输出（JSONL）
 ├── results/           # 精度/性能结果
 ├── summary/           # 汇总报告
-│   ├── summary.csv        # CSV 格式
-│   ├── summary.md         # Markdown 格式
-│   └── summary.jsonl      # JSONL 格式
+│   ├── summary.csv        # CSV
+│   ├── summary.md         # Markdown
+│   └── summary.jsonl      # JSONL
 └── logs/
     ├── infer/             # 推理日志
     └── eval/              # 评测日志
@@ -238,55 +237,52 @@ outputs/default/YYYYMMDD_HHMMSS/
 |---------|---------|---------|
 | 目标 | 验证模型输出质量 | 测量系统吞吐和延迟 |
 | 指标 | Accuracy / Pass@k 等 | RPS / Latency / Throughput |
-| 数据来源 | 外部裁判模型 + 标准答案 | AISBench 内置计时 |
+| 工具 | AISBench + 外部裁判模型 | AISBench 内置计时 |
 | 输出 | summary/ | results/ |
-| 常用场景 | 模型对比 / 榜单参评 | 服务容量规划 / 性能优化 |
 
 ---
 
 ## 十、常见问题
 
 **Q: ais_bench 命令找不到？**
-A: 检查 `pip install` 是否成功，尝试 `python -m ais_bench` 或 `which ais_bench`。
+A: 检查 `pip install` 是否成功；确认 Python 环境是 3.10/3.11/3.12。
 
 **Q: 推理服务连不上？**
-A: 用 `curl http://host:port/v1/models` 验证服务可达性；检查 host/port/url 配置。
+A: 用 `curl http://host:port/v1/models` 验证；检查 host/port/url 配置。
 
 **Q: 精度结果异常（远低于预期）？**
-A: 排查顺序：① 模型名称是否正确 ② api_key 是否匹配 ③ prompt 配置是否和数据集合适 ④ 数据集本身是否与模型匹配（有些数据集需要特定模型）
+A: 排查：① 模型名称是否正确 ② api_key 是否匹配 ③ prompt 配置 ④ 数据集与模型是否匹配。
 
 **Q: Python 版本报错？**
-A: AISBench 仅支持 Python 3.10/3.11/3.12，不支持 3.9 和 3.13+。
+A: 仅支持 3.10 / 3.11 / 3.12。
 
-**Q: 任务卡住没有任何输出？**
-A: 推理服务是否正常启动；增加 `--retry`；按 P 键查看实时状态。
+**Q: 任务卡住无输出？**
+A: 推理服务是否正常；按 P 键查看实时状态；增加 `--retry`。
 
-**Q: 性能评测结果波动大？**
+**Q: 性能结果波动大？**
 A: 多次测量取平均值；确保机器无其他负载；使用 `--stable_warmup` 预热。
 
 **Q: BFCL 函数调用评测怎么做？**
-A: 安装 `requirements/datasets/bfcl_eval.txt --no-deps`，然后使用 `vllm_api_function_call` 模型。
+A: 安装 `requirements/datasets/bfcl_eval.txt --no-deps`，使用 `vllm_api_function_call` 模型。
 
 **Q: 多任务并行怎么配置？**
-A: AISBench 支持多模型+多数据集并行，在配置文件中写多个 dict 即可。
+A: 在配置文件中写多个 dict 即可，支持多模型+多数据集并行。
 
 **Q: 输出格式选哪个好？**
-A: jsonl（IO 最轻，适合程序处理）/ CSV（便于 Excel 分析）/ Markdown（人工可读报告）。
+A: jsonl（低 IO，适合程序）/ CSV（Excel 分析）/ Markdown（人工可读报告）。
 
-**Q: 想看实时看板但结果刷太快？**
-A: 按 `P` 暂停刷新；结果保存在 `outputs/` 目录，随时可查。
+**Q: 评测数据集太大想先试小样本？**
+A: 使用 `demo_` 前缀数据集（如 `demo_gsm8k_gen_4_shot_cot_prompt`）。
 
-**Q: 评测数据集太大，想先试小样本？**
-A: 使用 `demo_` 前缀的数据集（如 `demo_gsm8k_gen_4_shot_cot_prompt`），通常是少量样本的演示版本。
+**Q: 如何选择 request_rate？**
+A: 压测上限用 `0`（全速）；摸高 RPS 用阶梯递增；稳态测试用实际业务预期 RPS。
 
-**Q: 性能评测如何选择 request_rate？**
-A: 压测上限用 `request_rate=0`（全速）；摸高 RPS 用阶梯递增（如 100/500/1000/5000）；稳态测试用实际业务预期 RPS。
+**Q: 想知道某次评测的详细配置？**
+A: `outputs/default/YYYYMMDD_HHMMSS/configs/` 目录下有完整配置备份。
 
 ---
 
 ## 十一、回答格式
-
-当用户咨询 AISBench 问题时，请按以下格式作答：
 
 1. **确认场景**：精度/性能/稳态 + 模型类型 + 数据集
 2. **给出命令**：`ais_bench` 命令或 Python 配置示例
