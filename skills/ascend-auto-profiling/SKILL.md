@@ -476,6 +476,33 @@ A: 确保已安装 `torch_npu` 包，且 NPU 驱动正常。
 **Q: 如何确定采集哪些数据项？**
 A: 通用调试：AI Core + AI Vector Core + Memory；深度分析：加上 Host 侧数据。
 
+**Q: 训练迭代非常慢（Loss 收敛正常但每步耗时高）？**
+A: 优先用 PyTorch Profiler 采集，分析 iter/stream 视图中的 dominant_op 和 high_frequency_op；也可能是数据加载瓶颈（检查 num_workers 和 DataLoader 耗时）。
+
+**Q: 推理延迟高，首 token 尤其慢？**
+A: 用 msprof 对推理服务采集，重点看 first_token_latency 相关算子；检查 prefill 阶段的矩阵乘和 attention 算子耗时。
+
+**Q: 多卡训练时通信占比过高？**
+A: 开启通信数据采集（hccl 相关 events），检查 comm_high_wait_ratio 和 comm_jitter；优化策略：增加 batch size、调整 allreduce 触发频率、启用梯度重叠。
+
+**Q: 采集的数据很大（> 1GB），无法打开怎么办？**
+A: 使用 `--slim` 精简输出，或限制采集时长（`--duration`）；大数据量推荐用 MindStudio Insight 分析，避免直接打开原始文件。
+
+**Q: Profiling 结果显示算子融合不生效？**
+A: 检查算子的输入 shape 是否满足融合条件（通常要求规整 shape）；尝试手动指定融合策略，或在代码中用 `aclEnableOpFusion` 强制开启。
+
+**Q: 自动调优后精度下降了怎么办？**
+A: 确认是哪个 pass 引入的下降（逐个关闭 Pass 排查）；某些场景下可保留手动调优结果，结合精度调试工具（msprobe）定位具体算子。
+
+**Q: 算子重复执行多次导致耗时长？**
+A: 检查是否存在重复的 profiling 采集（某次采集的 start/stop 未成对调用）；也可能是模型中存在冗余的计算图结构。
+
+**Q: 相同模型、相同配置，两次采集结果差异大？**
+A: 排除以下因素：① 采集时长太短（建议 >30s）；② 其他进程抢占 NPU；③ 散热/功耗导致的频率波动；④ 采集本身 overhead 不稳定。
+
+**Q: 想知道算子的 FLOPs 利用率（MFU）？**
+A: 使用 calc-mfu Skill，输入算子维度、耗时和芯片峰值算力，自动计算 MFU 并给出优化建议。
+
 ---
 
 ## 七、回答格式要求
