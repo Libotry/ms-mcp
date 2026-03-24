@@ -17,11 +17,11 @@ description: AISBench Benchmark 大模型评测工具的完整使用指南，覆
 
 | 能力 | 说明 |
 |-------|------|
-| **精度评测** | 推理问答、 数学 / 常识 / 多模态 / 函数调用 / 代码等数据集 |
-| **性能评测** | 延迟 / 吞吐 / 稳态 / 压测 / 真实流量模拟 |
+| **精度评测** | 推理问答、数学/常识/多模态/函数调用/代码等数据集 |
+| **性能评测** | 延迟/吞吐/稳态/压测/真实流量模拟 |
 | **Mooncake Trace 模拟** | 支持 hash_id 缓存和按时间戳调度请求 |
-| **多任务并行** | 多模型 / 多数据集 / 多场景并行执行 |
-| **实时看板** | 任务状态 / 进度 / 日志路径 |
+| **多任务并行** | 多模型/多数据集/多场景并行执行 |
+| **实时看板** | 任务状态/进度/日志路径实时显示 |
 
 ---
 
@@ -29,9 +29,9 @@ description: AISBench Benchmark 大模型评测工具的完整使用指南，覆
 
 ### 环境要求
 
-- **Python**：仅 3.10 / 3.11 / 12
+- **Python**：仅 3.10 / 3.11 / 3.12
 - **不兼容**：3.9 以下 / 3.13 以上
-- **推荐**：Conda 管理环境
+- **推荐**：Conda 管理环境避免依赖冲突
 
 ### 源码安装
 
@@ -51,6 +51,12 @@ pip install -e . --use-pep 517
 | `requirements/datasets/bfcl_eval.txt --no-deps` | BFCL 函数调用评测 |
 | `requirements/datasets/ocrbench_v2.txt` | OCRBench v2 |
 
+### 验证安装
+
+```bash
+ais_bench -h
+```
+
 ---
 
 ## 三、快速入门
@@ -58,8 +64,11 @@ pip install -e . --use-pep 517
 ### 精度评测
 
 ```bash
-# 基础精度评测（vLLM + gsm8k 数据集）
+# 基础精度评测（vLLM + gsm8k）
 ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_prompt
+
+# 多数据集并行评测
+ais_bench --models vllm_api_general_chat --datasets gsm8k,mmlu_pro,hellaswag
 ```
 
 ### 性能评测
@@ -68,9 +77,21 @@ ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_pr
 # 吞吐评测（1k 请求）
 ais_bench --models vllm_api --datasets 1k_rps_avg_throughput
 
-# 稳态性能
+# 延迟评测
+ais_bench --models vllm_api --datasets avg_latency
+
+# 稳态性能（预热后压测）
 ais_bench --models vllm_api --evaluator stable_stage
+
+# 压力测试（高并发）
+ais_bench --models vllm_api --datasets 10k_rps_stress --batch_size 64
 ```
+
+### 实时看板
+
+执行命令后实时显示任务看板：
+- 按 **`P`** 暂停/恢复刷新
+- 按 **`Ctrl+C`** 安全退出（保留已出结果）
 
 ---
 
@@ -82,13 +103,19 @@ ais_bench --models vllm_api --evaluator stable_stage
 |------|------|
 | `--models` | 推理服务端点、并发数、API 配置 |
 | `--datasets` | 数据集名称、prompt 配置 |
-| `--evaluator` | 结果汇总方式（精度 / 性能 / 稳态） |
+| `--evaluator` | 结果汇总方式（精度/性能/稳态） |
 
 ### 任务查询
 
 ```bash
 # 查找模型/数据集对应的配置文件路径
 ais_bench --models <model> --datasets <dataset> --search
+
+# 查看所有可用数据集
+ais_bench --list-datasets
+
+# 查看所有可用模型
+ais_bench --list-models
 ```
 
 ---
@@ -117,13 +144,15 @@ models = [
     dict(
         type=VLLMCustomAPI,
         abbr="vllm-api-general-chat",
-        model="your-model-name",     # 实际模型名称
+        model="Qwen/Qwen2.5-7B-Instruct",   # 实际模型名称
         host="localhost",
         port=8080,
         url="/v1/chat/completions",
         batch_size=1,
         temperature=0.01,
         retry=2,
+        max_out_len=512,
+        request_rate=0,   # 0 = 全速发送
     )
 ]
 ```
@@ -132,7 +161,7 @@ models = [
 
 ## 六、数据集
 
-### 支持的数据集类型
+### 主要数据集类型
 
 | 数据集 | 类型 |
 |--------|------|
@@ -146,14 +175,16 @@ models = [
 | livecodebench | 代码评测 |
 | ifeval | 指令遵循 |
 | race | 阅读理解 |
-| xsum / ROPES | 摘要 / 推理 |
+| xsum / ROPES | 摘要/推理 |
 | vocalsound | 声音理解 |
-| mooncake_trace | 模拟流量调度（按时间戳 / hash_id 缓存 / 可复现 prompt） |
+| mooncake_trace | 模拟流量调度 |
 
-### 数据集查询
+### Mooncake Trace 特殊用法
 
 ```bash
-ais_bench --models <model> --datasets <dataset> --search
+# 使用真实业务流量回放
+ais_bench --models vllm_api --datasets mooncake_trace \
+  --trace_path /path/to/your/trace.json
 ```
 
 ---
@@ -164,21 +195,21 @@ ais_bench --models <model> --datasets <dataset> --search
 
 | 指标 | 说明 |
 |------|------|
-| first_token_latency | 首 Token 延迟 |
-| per_token_latency | Token 间隔延迟 |
-| request_throughput | 请求吞吐 |
-| token_throughput | Token 吞吐 |
+| first_token_latency | 首 Token 延迟（秒） |
+| per_token_latency | Token 间隔延迟（秒） |
+| request_throughput | 请求吞吐（请求/秒） |
+| token_throughput | Token 吞吐（Token/秒） |
 | RPS | 每秒请求数 |
 | stable_stage | 稳态性能（预热后压测）|
 
 ### 性能配置参数
 
 ```bash
-# 请求级配置
---request_rate <n>    # 每秒 n 请求
---batch_size <n>        # 并发数
---max_tokens <n>         # 最大输出 Token 数
---evaluation_interval <n>  # 评测间隔
+--request_rate <n>           # 每秒 n 请求（0=全速）
+--batch_size <n>             # 并发数
+--max_tokens <n>            # 最大输出 Token 数
+--stable_warmup <n>         # 稳态预热轮数
+--evaluation_interval <n>   # 评测间隔（秒）
 ```
 
 ---
@@ -187,68 +218,78 @@ ais_bench --models <model> --datasets <dataset> --search
 
 ```
 outputs/default/YYYYMMDD_HHMMSS/
-├── configs/          # 任务配置合集
-├── predictions/      # 推理输出（JSONL）
-├── results/          # 精度/性能结果
-├── summary/          # 汇总报告
-│   ├── summary.csv       # CSV 格式
-│   ├── summary.md        # Markdown 格式
-│   └── summary.jsonl     # JSONL 格式
+├── configs/            # 任务配置合集
+├── predictions/        # 推理输出（JSONL）
+├── results/           # 精度/性能结果
+├── summary/           # 汇总报告
+│   ├── summary.csv        # CSV 格式
+│   ├── summary.md         # Markdown 格式
+│   └── summary.jsonl      # JSONL 格式
 └── logs/
-    ├── infer/           # 推理日志
-    └── eval/            # 评测日志
+    ├── infer/             # 推理日志
+    └── eval/              # 评测日志
 ```
 
 ---
 
-## 九、Mooncake Trace 特殊支持
+## 九、精度 vs 性能评测对比
 
-### Trace 模拟
-
-支持 hash_id 缓存 / 时间戳调度 / 可复现 prompt：
-
-| 特性 | 说明 |
-|------|------|
-| 按时间戳调度 | 支持真实业务流量回放 |
-| hash_id 缓存 | 请求缓存复用 |
-| 可复现 prompt | 相同 hash_id 生成一致结果 |
+| 对比维度 | 精度评测 | 性能评测 |
+|---------|---------|---------|
+| 目标 | 验证模型输出质量 | 测量系统吞吐和延迟 |
+| 指标 | Accuracy / Pass@k 等 | RPS / Latency / Throughput |
+| 数据来源 | 外部裁判模型 + 标准答案 | AISBench 内置计时 |
+| 输出 | summary/ | results/ |
+| 常用场景 | 模型对比 / 榜单参评 | 服务容量规划 / 性能优化 |
 
 ---
 
 ## 十、常见问题
 
-**Q: 推理服务连不上？**
-A: `curl http://host:port` 验证服务可达性。
+**Q: ais_bench 命令找不到？**
+A: 检查 `pip install` 是否成功，尝试 `python -m ais_bench` 或 `which ais_bench`。
 
-**Q: 精度结果异常？**
-A: 检查模型名称、API key、prompt 配置、数据集路径。
+**Q: 推理服务连不上？**
+A: 用 `curl http://host:port/v1/models` 验证服务可达性；检查 host/port/url 配置。
+
+**Q: 精度结果异常（远低于预期）？**
+A: 排查顺序：① 模型名称是否正确 ② api_key 是否匹配 ③ prompt 配置是否和数据集合适 ④ 数据集本身是否与模型匹配（有些数据集需要特定模型）
 
 **Q: Python 版本报错？**
-A: 仅支持 3.10 / 3.11 / 3.12。
+A: AISBench 仅支持 Python 3.10/3.11/3.12，不支持 3.9 和 3.13+。
 
-**Q: 任务卡住？**
-A: 推理服务是否正常；增加 `--retry` 重试次数。
+**Q: 任务卡住没有任何输出？**
+A: 推理服务是否正常启动；增加 `--retry`；按 P 键查看实时状态。
 
-**Q: 多任务并行？**
-A: AISBench 支持多模型 + 多数据集 + 多场景并行。
+**Q: 性能评测结果波动大？**
+A: 多次测量取平均值；确保机器无其他负载；使用 `--stable_warmup` 预热。
 
 **Q: BFCL 函数调用评测怎么做？**
-A: 安装 `requirements/datasets/bfcl_eval.txt` 后使用 `vllm_api_function_call` 模型。
+A: 安装 `requirements/datasets/bfcl_eval.txt --no-deps`，然后使用 `vllm_api_function_call` 模型。
 
-**Q: 输出格式选哪个？**
-A: jsonl（低 IO 开销）/ CSV（Excel 分析）/ Markdown（可读报告）。
+**Q: 多任务并行怎么配置？**
+A: AISBench 支持多模型+多数据集并行，在配置文件中写多个 dict 即可。
 
-**Q: 性能结果在哪里看？**
-A: `results/` 目录，`summary/` 目录。
+**Q: 输出格式选哪个好？**
+A: jsonl（IO 最轻，适合程序处理）/ CSV（便于 Excel 分析）/ Markdown（人工可读报告）。
+
+**Q: 想看实时看板但结果刷太快？**
+A: 按 `P` 暂停刷新；结果保存在 `outputs/` 目录，随时可查。
+
+**Q: 评测数据集太大，想先试小样本？**
+A: 使用 `demo_` 前缀的数据集（如 `demo_gsm8k_gen_4_shot_cot_prompt`），通常是少量样本的演示版本。
+
+**Q: 性能评测如何选择 request_rate？**
+A: 压测上限用 `request_rate=0`（全速）；摸高 RPS 用阶梯递增（如 100/500/1000/5000）；稳态测试用实际业务预期 RPS。
 
 ---
 
 ## 十一、回答格式
 
-1. **确认场景**：精度 / 性能 / 稳态 + 模型类型 + 数据集
-2. **给出命令**：ais_bench 命令或 Python 配置
-3. **解释指标**：输出结果中的具体数值含义
-4. **排查方向**：精度异常 / 延迟高 / 吞吐低 / 服务不可用
+当用户咨询 AISBench 问题时，请按以下格式作答：
+
+1. **确认场景**：精度/性能/稳态 + 模型类型 + 数据集
+2. **给出命令**：`ais_bench` 命令或 Python 配置示例
+3. **解释指标**：输出结果中具体数值含义
+4. **排查方向**：精度异常/延迟高/吞吐低/服务不可用
 </parameter>
-</parameter>
-</minimax:tool_call>
