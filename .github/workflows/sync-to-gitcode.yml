@@ -1,0 +1,25 @@
+name: Sync to GitCode
+
+on:
+  push:
+    branches:
+      - main       # 监听主分支，如果是 master 请改为 master
+      - master     
+      - develop    # 如果需要同步其他分支，可在此添加
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 关键：获取完整历史，否则同步会丢失提交记录
+
+      - name: Push to GitCode
+        run: |
+          git remote add gitcode https://${{ secrets.GITCODE_USERNAME }}:${{ secrets.GITCODE_TOKEN }}@gitcode.com/Ascend-tool/${{ github.event.repository.name }}.git
+          git push --mirror gitcode
+        env:
+          GITCODE_USERNAME: ${{ secrets.GITCODE_USERNAME }}
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
