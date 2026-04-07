@@ -351,9 +351,20 @@ shared/
 | 决策点 | 交互方式 | 内容 |
 |--------|---------|------|
 | **指标对齐** | 对话确认 | 用户选关注指标（MFU/迭代时间/通信重叠/内存等），设定目标值 |
-| **假设选择** | 展示列表 | LLM 列出 N 个假设，用户选要验证的 |
+| **假设选择** | 展示列表 | LLM 列出 N 个假设，每条附收益预期（🎯/📊/📉）+ 风险（🔴/🟡/🟢）+ 范围 |
 | **代码改动** | dry-run diff | 每次改代码前展示 diff，用户明确批准 |
 | **继续/终止** | 对话确认 | 每次迭代后可继续、终止、或调整方向 |
+
+**假设格式示例**：
+```
+🎯 假设 1：启用 FlashAttention 融合
+   收益预期：🎯高（MFU +8~12%）| 改动风险：🟢低 | 改动范围：单文件
+   → 预期提升：MFU +8~12%
+
+📊 假设 2：调整 batch_size 从 32→64
+   收益预期：🎯高（MFU +15%）| 改动风险：🔴高 | 改动范围：单文件
+   → 预期提升：MFU +15%（有 OOM 风险）
+```
 
 ### 8.3 辅助脚本清单
 
@@ -362,12 +373,11 @@ shared/
 | 脚本 | 职责 | 调用方式 |
 |------|------|---------|
 | `start_session.sh` | 创建会话目录 + 写入 config.yaml | `bash .trae/skills/auto-tuning/scripts/start_session.sh <goal>` |
-| `run_profile.sh` | 检测框架 + 执行 profiling | `bash .trae/skills/auto-tuning/scripts/run_profile.sh <session_id> <framework>` |
-| `analyze_results.py` | 调用 analyzer.py 解析数据 + 生成 findings | `python .trae/skills/auto-tuning/scripts/analyze_results.py <profiling_path>` |
+| `run_profile.sh` | 框架检测 + 生成 profiling 命令 + 采集数据 | `bash .trae/skills/auto-tuning/scripts/run_profile.sh <session_id> <framework>` |
 | `check_convergence.sh` | 对比基线和当前指标 + 判断收敛 | `bash .trae/skills/auto-tuning/scripts/check_convergence.sh <session_id>` |
 | `apply_patch.sh` | 生成/应用/回滚代码 diff | `bash .trae/skills/auto-tuning/scripts/apply_patch.sh <session_id> <action>` |
 
-> `analyzer.py`（已有）由 `analyze_results.py` 调用，无需 MCP 中转。
+> 分析由 `ascend-auto-profiling` SKILL 提供，Discover 阶段 TRAE LLM 加载该 SKILL 进行 profiling 数据分析。无需单独写分析脚本。
 
 ### 8.4 会话持久化设计
 
@@ -381,6 +391,7 @@ shared/
         ├── config.yaml        # 用户对齐的指标、目标、约束
         ├── history.json       # 所有迭代记录（追加写）
         ├── current_state.json # 当前状态（快照）
+        ├── audit.log          # 审计日志（每操作追加一行 JSON）
         └── iteration_{i}/
             ├── baseline/       # 基线数据
             ├── profiling/      # 本次采集数据
@@ -649,6 +660,46 @@ ms-mcp/
 | `mfu_improved` | MFU 提升达标 🎉 |
 | `no_improvement` | 本次优化未带来改善，继续探索中 |
 | `regression` | ⚠️ 检测到性能回退，建议回滚 |
+
+**注意**：dataclass 内部用语义字符串（`"target_achieved"` / `"regression"` / `"no_improvement"`），emoji 只在 UI 展示层翻译。这样 `ConvergenceResult` 结构干净，程序和用户各取所需。
+
+### 8.12 第二轮 Review 意见（sonnet + gemini25 + dare · 补充）
+
+> 来源：多猫咪对 §八 第一版的独立审阅 + 铲屎官架构决策
+
+#### 一、本轮已处置的问题
+
+| 状态 | 来源 | 问题 | 处置 |
+|------|------|------|------|
+| ✅ 已处置 | 铲屎官 | P2：`analyze_results.py` 路径不可达 | **复用 `ascend-auto-profiling` SKILL 做分析，删除该脚本** |
+| ✅ 已处置 | gemini25 | §8.2 假设格式缺少示例 | §8.2 补充假设格式示例（🎯/📊/🔴/🟡/🟢） |
+| ✅ 已处置 | gemini25 | 迭代次数无上限 | SKILL.md §二 明确 `max_iterations: 5` 硬上限 |
+| ✅ 已处置 | gemini25 | framework 参数有效值未文档化 | SKILL.md §三 Step 2 补充支持框架列表 |
+
+#### 二、本轮新发现的问题（待处置）
+
+| # | 严重度 | 来源 | 问题 | 建议处置 |
+|---|--------|------|------|---------|
+| **P10** | 🟡 中 | sonnet | `analyzer.py` 在 TRAE bash 中 import 路径不可达。`analyze_results.py` 删除后，Discover 阶段 LLM 调用 `analyzer.py` 时，`sys.path` 不包含 ms-mcp 根目录 | SKILL.md 应指导 LLM 通过绝对路径调用：`python /path/to/ms-mcp/analyzer.py <data>` |
+| **P11** | 🟡 中 | sonnet | 框架检测逻辑未定义。`run_profile.sh` 说"检测框架"，但实际只打印模板，真实检测靠 LLM 自行判断，不确定性高 | 实现 `detect_framework.py` 脚本，读取训练脚本的 import 语句判断框架类型 |
+| **P12** | 🟡 中 | dare | `session_id` 用时间+PID 生成，同一秒内并发调用会生成重复 ID，导致会话覆盖 | 改用 UUID 或在 session 已存在时报错而非静默覆盖 |
+| **P13** | 🟡 中 | sonnet | `config.yaml` 字段结构未在 §八 定义。阈值来源（`parse_thresholds_from_config`）只解析 `MFU:65%` 格式，兼容性差 | 定义标准 config.yaml schema，明确字段名和格式 |
+| **P14** | 🟡 中 | sonnet | `apply_patch.sh rollback` 用 `git checkout -- .` 会清除**所有**未提交改动 | 改用 `git stash` 或只 checkout patch.diff 涉及的文件 |
+| **P15** | 🟡 中 | dare | `start_session.sh` 的 goals 参数无校验。特殊字符（引号/换行）会破坏 YAML/JSON 格式 | 增加输入校验：拒绝换行符、限制长度（≤2048）、转义特殊字符 |
+| **P16** | 🟡 中 | dare | `parse_thresholds_from_config` 静默失败。当配置格式不对时返回空 `thresholds`，导致 `judge_convergence` 的 `all()` 在空字典上永远为 True，误判为"已达标" | 空阈值时应显式报错，而非静默退化 |
+| **P17** | 🟢 低 | dare | `iteration` 目录与 `current_state.json` 可能不一致。用户手动创建目录时状态文件不会同步 | 增加一致性校验，不一致时报错 |
+| **P18** | 🟢 低 | dare | `BASH_SOURCE[0]` 在非标准 bash 调用时可能失效（如 `sh script.sh`） | 改用 `realpath` 或在脚本开头设置绝对路径基准 |
+
+#### 三、设计决策确认
+
+> 以下决策已由铲屎官确认，记录在此防止回退
+
+| 决策 | 内容 |
+|------|------|
+| **分析层复用** | Discover 阶段分析 profiling 数据，复用 `ascend-auto-profiling` SKILL，不另写脚本 |
+| **迭代硬上限** | `max_iterations: 5`，防止无限循环 |
+| **收敛翻译** | dataclass 用语义值（`target_achieved`），UI 层翻译为 emoji |
+| **Audit 日志** | 每次操作追加一行 JSON 到 `audit.log`（dare 零信任要求） |
 
 ---
 
