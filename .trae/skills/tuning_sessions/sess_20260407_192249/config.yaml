@@ -1,0 +1,11 @@
+session_id: sess_20260407_192249
+created: 2026-04-07T19:22:49.153752
+goals: MFU:60% max_iter:3 framework:pytorch scenario:inference
+constraints:
+  no_precision_change: True
+  no_hyperparam_change: True
+  max_iterations: 3
+code_path: E:\Bernard\Project\code\github.com\Libotry\vllm
+iterations: []
+current_iteration: 0
+status: active
